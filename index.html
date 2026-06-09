@@ -1107,27 +1107,40 @@
             // Default safe callback mapping placeholders if arrays fall out of synch structural boundaries
             const get3rd = (idx) => T[idx] || "3rd-Place Team";
 
-            // Precise FIFA 2026 Round of 32 bracket layouts crossover schema mapping
+            // Official FIFA 2026 Round of 32 matchups (Matches 73-88)
+            // Pattern: Group Winners vs Third-Place Teams, Runners-up vs Runners-up
             bracketState.r32 = [
-                { t1: G['A'].p1, t2: get3rd(0), w: null }, // Match 1
-                { t1: G['B'].p2, t2: G['C'].p2, w: null }, // Match 2
-                { t1: G['E'].p1, t2: G['F'].p2, w: null }, // Match 3
-                { t1: G['F'].p1, t2: get3rd(1), w: null }, // Match 4
+                // Match 73-74: Group A runners-up vs Group B runners-up + Group E winners vs 3rd place
+                { t1: G['A'].p2, t2: G['B'].p2, w: null }, // Match 73: A2 vs B2
+                { t1: G['E'].p1, t2: get3rd(0), w: null }, // Match 74: E1 vs 3rd place
                 
-                { t1: G['C'].p1, t2: get3rd(2), w: null }, // Match 5
-                { t1: G['D'].p2, t2: G['G'].p2, w: null }, // Match 6
-                { t1: G['G'].p1, t2: get3rd(3), w: null }, // Match 7
-                { t1: G['H'].p1, t2: G['I'].p2, w: null }, // Match 8
-
-                { t1: G['B'].p1, t2: get3rd(4), w: null }, // Match 9
-                { t1: G['A'].p2, t2: G['E'].p2, w: null }, // Match 10
-                { t1: G['D'].p1, t2: get3rd(5), w: null }, // Match 11
-                { t1: G['J'].p1, t2: G['K'].p2, w: null }, // Match 12
-
-                { t1: G['I'].p1, t2: get3rd(6), w: null }, // Match 13
-                { t1: G['K'].p1, t2: G['L'].p2, w: null }, // Match 14
-                { t1: G['L'].p1, t2: get3rd(7), w: null }, // Match 15
-                { t1: G['J'].p2, t2: G['H'].p2, w: null }  // Match 16
+                // Match 75-76: Group F winners vs C2, Group C winners vs F2
+                { t1: G['F'].p1, t2: G['C'].p2, w: null }, // Match 75: F1 vs C2
+                { t1: G['C'].p1, t2: G['F'].p2, w: null }, // Match 76: C1 vs F2
+                
+                // Match 77-78: Group I winners vs 3rd place + Group E runners-up vs I runners-up
+                { t1: G['I'].p1, t2: get3rd(1), w: null }, // Match 77: I1 vs 3rd place
+                { t1: G['E'].p2, t2: G['I'].p2, w: null }, // Match 78: E2 vs I2
+                
+                // Match 79-80: Group A winners vs 3rd place + Group L winners vs 3rd place
+                { t1: G['A'].p1, t2: get3rd(2), w: null }, // Match 79: A1 vs 3rd place
+                { t1: G['L'].p1, t2: get3rd(3), w: null }, // Match 80: L1 vs 3rd place
+                
+                // Match 81-82: Group D winners vs 3rd place + Group G winners vs 3rd place
+                { t1: G['D'].p1, t2: get3rd(4), w: null }, // Match 81: D1 vs 3rd place
+                { t1: G['G'].p1, t2: get3rd(5), w: null }, // Match 82: G1 vs 3rd place
+                
+                // Match 83-84: Group K runners-up vs L runners-up + Group H winners vs J runners-up
+                { t1: G['K'].p2, t2: G['L'].p2, w: null }, // Match 83: K2 vs L2
+                { t1: G['H'].p1, t2: G['J'].p2, w: null }, // Match 84: H1 vs J2
+                
+                // Match 85-86: Group B winners vs 3rd place + Group J winners vs H runners-up
+                { t1: G['B'].p1, t2: get3rd(6), w: null }, // Match 85: B1 vs 3rd place
+                { t1: G['J'].p1, t2: G['H'].p2, w: null }, // Match 86: J1 vs H2
+                
+                // Match 87-88: Group K winners vs 3rd place + Group D runners-up vs G runners-up
+                { t1: G['K'].p1, t2: get3rd(7), w: null }, // Match 87: K1 vs 3rd place
+                { t1: G['D'].p2, t2: G['G'].p2, w: null }  // Match 88: D2 vs G2
             ];
 
             // Re-seed upper nodes
@@ -1210,19 +1223,72 @@
         // Tracks downstream dependencies and unseats winners dynamically if nodes are altered mid-flow
         function clearUpstreamChain(tier, idx, winner, loser) {
             if (tier === 'r32') {
-                const nextIdx = Math.floor(idx / 2);
-                const nextSlot = (idx % 2 === 0) ? 't1' : 't2';
-                resetTargetSlot('r16', nextIdx, nextSlot, winner);
+                // Official FIFA 2026 Round of 16 progression mapping
+                // R32 indices: 0-15 (Matches 73-88)
+                // R16 progression:
+                // R16[0]: Winner of Match 74 (R32[1]) vs Winner of Match 77 (R32[4])
+                // R16[1]: Winner of Match 73 (R32[0]) vs Winner of Match 75 (R32[2])
+                // R16[2]: Winner of Match 76 (R32[3]) vs Winner of Match 78 (R32[5])
+                // R16[3]: Winner of Match 79 (R32[6]) vs Winner of Match 80 (R32[7])
+                // R16[4]: Winner of Match 83 (R32[10]) vs Winner of Match 84 (R32[11])
+                // R16[5]: Winner of Match 81 (R32[8]) vs Winner of Match 82 (R32[9])
+                // R16[6]: Winner of Match 86 (R32[13]) vs Winner of Match 88 (R32[15])
+                // R16[7]: Winner of Match 85 (R32[12]) vs Winner of Match 87 (R32[14])
+                
+                const r16Mapping = {
+                    1: { r16Idx: 0, slot: 't1' },  // R32[1] → R16[0] slot t1
+                    4: { r16Idx: 0, slot: 't2' },  // R32[4] → R16[0] slot t2
+                    0: { r16Idx: 1, slot: 't1' },  // R32[0] → R16[1] slot t1
+                    2: { r16Idx: 1, slot: 't2' },  // R32[2] → R16[1] slot t2
+                    3: { r16Idx: 2, slot: 't1' },  // R32[3] → R16[2] slot t1
+                    5: { r16Idx: 2, slot: 't2' },  // R32[5] → R16[2] slot t2
+                    6: { r16Idx: 3, slot: 't1' },  // R32[6] → R16[3] slot t1
+                    7: { r16Idx: 3, slot: 't2' },  // R32[7] → R16[3] slot t2
+                    10: { r16Idx: 4, slot: 't1' }, // R32[10] → R16[4] slot t1
+                    11: { r16Idx: 4, slot: 't2' }, // R32[11] → R16[4] slot t2
+                    8: { r16Idx: 5, slot: 't1' },  // R32[8] → R16[5] slot t1
+                    9: { r16Idx: 5, slot: 't2' },  // R32[9] → R16[5] slot t2
+                    13: { r16Idx: 6, slot: 't1' }, // R32[13] → R16[6] slot t1
+                    15: { r16Idx: 6, slot: 't2' }, // R32[15] → R16[6] slot t2
+                    12: { r16Idx: 7, slot: 't1' }, // R32[12] → R16[7] slot t1
+                    14: { r16Idx: 7, slot: 't2' }  // R32[14] → R16[7] slot t2
+                };
+                
+                if (r16Mapping[idx]) {
+                    const { r16Idx, slot } = r16Mapping[idx];
+                    resetTargetSlot('r16', r16Idx, slot, winner);
+                }
             } 
             else if (tier === 'r16') {
-                const nextIdx = Math.floor(idx / 2);
-                const nextSlot = (idx % 2 === 0) ? 't1' : 't2';
-                resetTargetSlot('qf', nextIdx, nextSlot, winner);
+                // Standard Round of 16 to Quarter-Finals progression
+                const qfMapping = {
+                    0: { qfIdx: 0, slot: 't1' },  // R16[0] → QF[0] slot t1
+                    1: { qfIdx: 0, slot: 't2' },  // R16[1] → QF[0] slot t2
+                    2: { qfIdx: 1, slot: 't1' },  // R16[2] → QF[1] slot t1
+                    3: { qfIdx: 1, slot: 't2' },  // R16[3] → QF[1] slot t2
+                    4: { qfIdx: 2, slot: 't1' },  // R16[4] → QF[2] slot t1
+                    5: { qfIdx: 2, slot: 't2' },  // R16[5] → QF[2] slot t2
+                    6: { qfIdx: 3, slot: 't1' },  // R16[6] → QF[3] slot t1
+                    7: { qfIdx: 3, slot: 't2' }   // R16[7] → QF[3] slot t2
+                };
+                
+                if (qfMapping[idx]) {
+                    const { qfIdx, slot } = qfMapping[idx];
+                    resetTargetSlot('qf', qfIdx, slot, winner);
+                }
             } 
             else if (tier === 'qf') {
-                const nextIdx = Math.floor(idx / 2);
-                const nextSlot = (idx % 2 === 0) ? 't1' : 't2';
-                resetTargetSlot('sf', nextIdx, nextSlot, winner);
+                const sfMapping = {
+                    0: { sfIdx: 0, slot: 't1' },
+                    1: { sfIdx: 0, slot: 't2' },
+                    2: { sfIdx: 1, slot: 't1' },
+                    3: { sfIdx: 1, slot: 't2' }
+                };
+                
+                if (sfMapping[idx]) {
+                    const { sfIdx, slot } = sfMapping[idx];
+                    resetTargetSlot('sf', sfIdx, slot, winner);
+                }
             } 
             else if (tier === 'sf') {
                 // Winner goes to Final, Loser goes to 3rd-Place Playoff
